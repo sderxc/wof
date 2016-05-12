@@ -6,6 +6,7 @@
     <script   src="https://code.jquery.com/jquery-2.0.3.min.js"   integrity="sha256-sTy1mJ4I/LAjFCCdEB4RAvPSmRCb3CU7YqodohyeOLo="   crossorigin="anonymous"></script>
     <script src="src/phaser/phaser.js" type="text/javascript"></script>
     <script src='src/phaser/modal.js'></script>
+    <script src='src/app/keyboard.js'></script>
 </head>
 <body>
 <div id="phaser-example">
@@ -142,6 +143,8 @@
         Game.input.keyboard.addCallbacks(this, null, null, keyPress);
 
         function spawnBoard() {
+            var kb = new virKeyBoard(Game);
+            kb.init(keyPress);
             plates = Game.add.group();
 
             for (var i = 0; i < BOARD_COLS; i++)
