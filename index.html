@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PhaserTest</title>
+    <script   src="https://code.jquery.com/jquery-2.0.3.min.js"   integrity="sha256-sTy1mJ4I/LAjFCCdEB4RAvPSmRCb3CU7YqodohyeOLo="   crossorigin="anonymous"></script>
+    <script src="src/phaser/phaser.js" type="text/javascript"></script>
+    <script src='src/phaser/modal.js'></script>
+</head>
+<body>
+<div id="phaser-example">
+
+</div>
+</body>
+
+<script>
+
+    var SCENE = '',
+        WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
+        WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
+        LOADING_TEXT = 'Запускаем...',
+        PLATE_WIDTH = 60,
+        PLATE_HEIGHT = 60,
+        BOARD_COLS = 12,
+        BOARD_ROWS = 4;
+
+    var Background, //Игровой фон
+        TitleText, DeveloperText, GraphicText, ScoreText, InstructionsText, HighScoreTitleText, HighScoreText, PostScoreText, LoadingText, //все текстовые объекты
+        plates,
+        modals // модальные окна
+            ;
+
+
+    var WORD = {
+        13: '*',
+        14: '*',
+        15: '*',
+        16: 'ш',
+        17: 'я',
+        18: 'г',
+        19: 'а',
+        20: '*',
+        21: '*'
+    };
+
+    // загрузка
+    var BootGameState = new Phaser.State();
+    BootGameState.create = function() {
+        LoadingText = Game.add.text(Game.world.width / 2, Game.world.height / 2, LOADING_TEXT, {
+            font: '32px "Press Start 2P"',
+            fill: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        LoadingText.anchor.setTo(0.5, 0.5);
+        Game.state.start('Preloader', false, false);
+    };
+
+    // прелоадер
+    var PreloaderGameState = new Phaser.State();
+    PreloaderGameState.preload = function() {
+        Game.load.spritesheet("PLATES", "assets/sprite_1.jpg", PLATE_WIDTH, PLATE_HEIGHT);
+
+        // модальные окна
+        modals = new gameModal(Game);
+        modals.createModal({
+            type:"wrongLatter",
+            includeBackground: true,
+            modalCloseOnInput: true,
+            itemsArr: [
+                {
+                    type: "text",
+                    content: "Нет такой буквы",
+                    fontFamily: "Arial",
+                    fontSize: 38,
+                    color: "0xFEFF49",
+                    offsetY: -50,
+                    stroke: "0x000000",
+                    strokeThickness: 5
+                }
+            ]
+        });
+    };
+
+    PreloaderGameState.create = function() {
+        var tween = Game.add.tween(LoadingText).to({
+            alpha: 0
+        }, 1000, Phaser.Easing.Linear.None, true);
+
+        tween.onComplete.add(function() {
+            Game.state.start('MainMenu', false, false);
+        }, this);
+    };
+    // главное меню
+
+    //////////////////////
+    //State - Main Menu //
+    //////////////////////
+    var MainMenuState = new Phaser.State();
+
+    MainMenuState.create = function() {
+        function click() {
+            Game.input.onDown.remove(click);
+            var tween = Game.add.tween(TitleText).to({
+                alpha: 0
+            }, 1000, Phaser.Easing.Linear.None, true);
+
+            tween.onComplete.add(function() {
+                Game.state.start('Game', false, false);
+            }, this);
+        }
+
+        TitleText = Game.add.text(Game.world.width / 2, Game.world.height / 3, 'Начать', {
+            font: '32px "Press Start 2P"',
+            fill: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        });
+        TitleText.anchor.setTo(0.5, 0.5);
+
+//        ScoreText.setText("");
+//        HighScoreTitleText.setText("");
+//        HighScoreText.setText("");
+//        PostScoreText.setText("");
+
+        Game.input.onDown.add(click);
+    };
+    /////////////////////////////////////
+    //Game state - Where Game is going //
+    /////////////////////////////////////
+    var GameState = new Phaser.State();
+
+    GameState.create = function() {
+        spawnBoard();
+        Game.input.keyboard.addCallbacks(this, null, null, keyPress);
+
+        function spawnBoard() {
+            plates = Game.add.group();
+
+            for (var i = 0; i < BOARD_COLS; i++)
+            {
+                for (var j = 0; j < BOARD_ROWS; j++)
+                {
+                    var posX = (i * (PLATE_HEIGHT + 3)) + 200;
+                    var posY = (j * (PLATE_HEIGHT + 3)) + 100;
+                    var plate = plates.create(posX, posY, "PLATES");
+                    plate.name = 'plate' + i.toString() + 'x' + j.toString();
+                    plate.inputEnabled = true;
+                    var id = calcPLateId(i,j);
+
+                    // создаем обводку по краям и заполняем пробелы белым
+                    if (j == 0 || j == (BOARD_ROWS - 1) || i == 0 || i == (BOARD_COLS - 1) || !WORD[id] || WORD[id] == '*') {
+                        plate.inputEnabled = false;
+                        plate.frame = 1;
+                    } else {
+                        plate.inputEnabled = true;
+                        plate.frame = 0;
+                    }
+                    // позицианируем
+                    plate.id = id;
+                }
+            }
+
+        }
+        // the gem id is used by getGem() to find specific gems in the group
+        // each position on the board has a unique id
+        function calcPLateId(posX, posY) {
+            return posX + posY * BOARD_COLS;
+
+        }
+
+        function keyPress(char) {
+
+            var hasLetter = false;
+            for(var p in WORD) {
+                // есть
+                if (WORD[p] == char) {
+                    var plate = plates.iterate('id', parseInt(p), Phaser.Group.RETURN_CHILD);
+
+                    var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: plate.width, align: "center"};
+                    var text = Game.add.text(20,20, WORD[p], style);
+                    plate.addChild(text);
+                    plate.frame = 1;
+                    hasLetter = true;
+                }
+            }
+
+            if (!hasLetter) {
+                modals.showModal("wrongLatter");
+            }
+        }
+    };
+
+
+    var Game = new Phaser.Game(WINDOW_WIDTH, WINDOW_HEIGHT, Phaser.CANVAS, SCENE);
+    //Добавляем все игровые State в объект Game
+    //В следующих частях каждый из State'ов будет подробно описан
+    Game.state.add('Boot', BootGameState, false);
+    Game.state.add('Preloader', PreloaderGameState, false);
+    Game.state.add('MainMenu', MainMenuState, false);
+    Game.state.add('Game', GameState, false);
+//    Game.state.add('GameOver', GameOverState, false);
+    //Главным шагом является старт загрузки Boot State'а
+    Game.state.start('Boot');
+
+</script>
+</html>
