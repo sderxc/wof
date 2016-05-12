@@ -25,17 +25,16 @@
         BOARD_ROWS = 4;
 
     var Background, //Игровой фон
-        TitleText, DeveloperText, GraphicText, ScoreText, InstructionsText, HighScoreTitleText, HighScoreText, PostScoreText, LoadingText, //все текстовые объекты
+        TitleText, LoadingText,
         plates,
         modals // модальные окна
             ;
 
-
     var WORD = {
         13: '*',
         14: '*',
-        15: '*',
-        16: 'ш',
+        15: 'ш',
+        16: 'н',
         17: 'я',
         18: 'г',
         19: 'а',
@@ -67,7 +66,7 @@
         modals.createModal({
             type:"wrongLatter",
             includeBackground: true,
-            modalCloseOnInput: true,
+            modalCloseOnInput: false,
             itemsArr: [
                 {
                     type: "text",
@@ -78,6 +77,17 @@
                     offsetY: -50,
                     stroke: "0x000000",
                     strokeThickness: 5
+                },
+                {
+                    type : "text",
+                    content: "X",
+                    fontSize: 52,
+                    color: "0x000000",
+                    offsetY: -130,
+                    offsetX: 240,
+                    callback: function(){
+                        modals.hideModal("wrongLatter");
+                    }
                 }
             ]
         });
@@ -120,11 +130,6 @@
         });
         TitleText.anchor.setTo(0.5, 0.5);
 
-//        ScoreText.setText("");
-//        HighScoreTitleText.setText("");
-//        HighScoreText.setText("");
-//        PostScoreText.setText("");
-
         Game.input.onDown.add(click);
     };
     /////////////////////////////////////
@@ -143,8 +148,8 @@
             {
                 for (var j = 0; j < BOARD_ROWS; j++)
                 {
-                    var posX = (i * (PLATE_HEIGHT + 3)) + 200;
-                    var posY = (j * (PLATE_HEIGHT + 3)) + 100;
+                    var posX = (i * (PLATE_HEIGHT + 3)) + Game.world.width / 5;
+                    var posY = (j * (PLATE_HEIGHT + 3)) + Game.world.height / 10;
                     var plate = plates.create(posX, posY, "PLATES");
                     plate.name = 'plate' + i.toString() + 'x' + j.toString();
                     plate.inputEnabled = true;
@@ -168,7 +173,6 @@
         // each position on the board has a unique id
         function calcPLateId(posX, posY) {
             return posX + posY * BOARD_COLS;
-
         }
 
         function keyPress(char) {
@@ -193,10 +197,12 @@
         }
     };
 
+    GameState.render = function () {
+        Game.debug.text(Game.time.fps || '--', 2, 14, "#00ff00");
+    };
 
     var Game = new Phaser.Game(WINDOW_WIDTH, WINDOW_HEIGHT, Phaser.CANVAS, SCENE);
     //Добавляем все игровые State в объект Game
-    //В следующих частях каждый из State'ов будет подробно описан
     Game.state.add('Boot', BootGameState, false);
     Game.state.add('Preloader', PreloaderGameState, false);
     Game.state.add('MainMenu', MainMenuState, false);
