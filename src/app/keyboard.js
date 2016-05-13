@@ -48,9 +48,9 @@ virKeyBoard = function(game) {
     return {
         init: function(clickCb) {
             game.virKB = game.add.group();
-            var y = 350;
+            var y = (Game.world.height / 10) + 63 + 315; //TODO переделать на нормальное выравнивание
             for (var row in config) {
-                var x = 100;
+                var x = (game.world.centerX - (60 * (6))); //TODO переделать на нормальное выравнивание
                 for (var leter in config[row]) {
                     var button = game.make.button(x, y, 'PLATES', removeGroup, this, 2, 1, 0);
                     button.name = config[row][leter];
@@ -58,13 +58,12 @@ virKeyBoard = function(game) {
                     var text = game.add.text(20,15, button.name, style);
                     button.addChild(text);
                     game.virKB.add(button);
-                    x+=63;
+                    x+=63; //TODO переделать на нормальное выравнивание
                 }
-                y+=63;
+                y+=63; //TODO переделать на нормальное выравнивание
             }
 
             function removeGroup(el) {
-                console.log(el.name);
                 clickCb(el.name);
             }
         }
