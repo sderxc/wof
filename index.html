@@ -27,6 +27,7 @@
 
     var Background, //Игровой фон
         TitleText, LoadingText,
+        MenuStartBtn,
         plates,
         modals // модальные окна
             ;
@@ -61,6 +62,7 @@
     var PreloaderGameState = new Phaser.State();
     PreloaderGameState.preload = function() {
         Game.load.spritesheet("PLATES", "assets/sprite_1.jpg", PLATE_WIDTH, PLATE_HEIGHT);
+        Game.load.spritesheet("BTN", "assets/gui/test_btn.png", 605, 236);
 
         // модальные окна
         modals = new gameModal(Game);
@@ -83,7 +85,7 @@
                     type : "text",
                     content: "X",
                     fontSize: 52,
-                    color: "0x000000",
+                    color: "0xFEFF49",
                     offsetY: -130,
                     offsetX: 240,
                     callback: function(){
@@ -112,26 +114,31 @@
 
     MainMenuState.create = function() {
         function click() {
-            Game.input.onDown.remove(click);
-            var tween = Game.add.tween(TitleText).to({
-                alpha: 0
-            }, 1000, Phaser.Easing.Linear.None, true);
+//            Game.input.onDown.remove(click);
+//            var tween = Game.add.tween(TitleText).to({
+//                alpha: 0
+//            }, 1000, Phaser.Easing.Linear.None, true);
 
-            tween.onComplete.add(function() {
+//            tween.onComplete.add(function() {
+                Game.world.remove(MenuStartBtn);
                 Game.state.start('Game', false, false);
-            }, this);
+//            }, this);
         }
+        MenuStartBtn = Game.add.button(Game.world.width / 2, Game.world.height / 3, 'BTN', click, this, 0, 0, 0);
+        MenuStartBtn.scale.setTo(0.3, 0.3);
+        var style = { font: "68px Arial", fill: "#fff", wordWrap: true, wordWrapWidth: MenuStartBtn.width, align: "center"};
+        var text = Game.add.text(-30,-20, 'Начать', style);
+        MenuStartBtn.addChild(text);
+//        TitleText = Game.add.text(Game.world.width / 2, Game.world.height / 3, 'Начать', {
+//            font: '32px "Press Start 2P"',
+//            fill: '#FFFFFF',
+//            stroke: '#000000',
+//            strokeThickness: 3,
+//            align: 'center'
+//        });
+        MenuStartBtn.anchor.setTo(0.5, 0.5);
 
-        TitleText = Game.add.text(Game.world.width / 2, Game.world.height / 3, 'Начать', {
-            font: '32px "Press Start 2P"',
-            fill: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 3,
-            align: 'center'
-        });
-        TitleText.anchor.setTo(0.5, 0.5);
-
-        Game.input.onDown.add(click);
+//        Game.input.onDown.add(click);
     };
     /////////////////////////////////////
     //Game state - Where Game is going //
