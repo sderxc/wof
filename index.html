@@ -7,6 +7,8 @@
     <script src="src/phaser/phaser.js" type="text/javascript"></script>
     <script src='src/phaser/modal.js'></script>
     <script src='src/app/keyboard.js'></script>
+    <script src='src/stuff/md5.min.js'></script>
+    <script src='src/app/api.js'></script>
 </head>
 <body>
 <div id="phaser-example">
@@ -15,7 +17,8 @@
 </body>
 
 <script>
-
+    var ali = new wordApi({});
+    ali.send({url: 'http://words.lalakla.ru/test/main/init', data: {ololo: 1}}, function(data){console.log(data)});
     var SCENE = '',
         WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
         WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
