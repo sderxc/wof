@@ -18,7 +18,9 @@
 
 <script>
     var ali = new wordApi({});
-    ali.send({url: 'http://words.lalakla.ru/test/main/init', data: {ololo: 1}}, function(data){console.log(data)});
+    ali.send({url: 'http://words.lalakla.ru/test/main/init',
+        data: {}},
+            function(data){console.log(data)}, function(data){console.log(data)});
     var SCENE = '',
         WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
         WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
