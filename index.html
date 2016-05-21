@@ -17,10 +17,10 @@
 </body>
 
 <script>
-    var ali = new wordApi({});
-    ali.send({url: 'http://words.lalakla.ru/test/main/init',
-        data: {}},
-            function(data){console.log(data)}, function(data){console.log(data)});
+//    var ali = new wordApi({});
+//    ali.send({url: 'http://words.lalakla.ru/test/main/init',
+//        data: {}},
+//            function(data){console.log(data)}, function(data){console.log(data)});
     var SCENE = '',
         WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
         WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
@@ -152,6 +152,7 @@
                     var posX = (i * (PLATE_WIDTH + 3)) + (Game.world.centerX - (PLATE_WIDTH * (BOARD_COLS/2))); // выровняем по центру экрана =)
                     var posY = (j * (PLATE_HEIGHT + 3)) + Game.world.height / 10;
                     var plate = plates.create(posX, posY, "PLATES");
+                    plate.anchor.setTo(0.5, 0.5);
                     plate.name = 'plate' + i.toString() + 'x' + j.toString();
                     plate.inputEnabled = true;
                     var id = calcPLateId(i,j);
@@ -177,18 +178,21 @@
         }
 
         function keyPress(char) {
-
             var hasLetter = false;
             for(var p in WORD) {
                 // есть
                 if (WORD[p] == char) {
-                    var plate = plates.iterate('id', parseInt(p), Phaser.Group.RETURN_CHILD);
-
-                    var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: plate.width, align: "center"};
-                    var text = Game.add.text(20,20, WORD[p], style);
-                    plate.addChild(text);
-                    plate.frame = 1;
                     hasLetter = true;
+                    var plate = plates.iterate('id', parseInt(p), Phaser.Group.RETURN_CHILD);
+                    var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: plate.width, align: "center"};
+                    var word = WORD[p];
+                    var tween = Game.add.tween(plate.scale).to( { x: 0, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
+                    tween.onComplete.add(function() {
+                        plate.frame = 1;
+                        var text = Game.add.text(-10,-20, word, style);
+                        plate.addChild(text);
+                        Game.add.tween(plate.scale).to( { x: 1, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
+                    }, this);
                 }
             }
 
