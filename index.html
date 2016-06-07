@@ -17,21 +17,20 @@
 </body>
 
 <script>
-//    var ali = new wordApi({});
-//    ali.send({url: 'http://words.lalakla.ru/test/main/init',
-//        data: {}},
-//            function(data){console.log(data)}, function(data){console.log(data)});
-    var SCENE = '',
+    var SRV_API = new wordApi({}),
+        USER_CONFIG = {},
+        GAME_CONFIG = {},
+        SCENE = '',
         WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
         WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
         LOADING_TEXT = 'Запускаем...',
         PLATE_WIDTH = 60,
         PLATE_HEIGHT = 60,
-        BOARD_COLS = 12,
+        BOARD_COLS = 24,
         BOARD_ROWS = 4;
 
     var Background, //Игровой фон
-        TitleText, LoadingText,
+        TitleText, LoadingText, HintText,
         MenuStartBtn,
         plates,
         modals // модальные окна
@@ -66,6 +65,14 @@
     // прелоадер
     var PreloaderGameState = new Phaser.State();
     PreloaderGameState.preload = function() {
+        SRV_API.send({url: 'http://words.lalakla.ru/test/main/init', data: {}},
+            function(data){
+                USER_CONFIG = data.User;
+                GAME_CONFIG = data.Config;
+            },
+            function(data){ console.log('ERRR',data)}
+        );
+
         Game.load.spritesheet("PLATES", "assets/sprite_1.jpg", PLATE_WIDTH, PLATE_HEIGHT);
         Game.load.spritesheet("BTN", "assets/gui/test_btn.png", 605, 236);
 
@@ -119,8 +126,24 @@
 
     MainMenuState.create = function() {
         function click() {
-                Game.world.remove(MenuStartBtn);
-                Game.state.start('Game', false, false);
+                // старт игры
+                SRV_API.startGame(function(data){
+                    console.log('GAME START',data);
+                    WORD = data.WordMask;
+                    LoadingText = Game.add.text(Game.world.width / 2, 30, data.WordDesc, {
+                        font: '32px "Press Start 2P"',
+                        fill: '#FFFFFF',
+                        stroke: '#000000',
+                        strokeThickness: 3,
+                        align: 'center'
+                    });
+                    LoadingText.anchor.setTo(0.5, 0.5);
+
+                    Game.world.remove(MenuStartBtn);
+
+                    Game.state.start('Game', false, false);
+                }, function(data){console.log('ERRR')});
+
         }
 
         MenuStartBtn = Game.add.button(Game.world.width / 2, Game.world.height / 3, 'BTN', click, this, 0, 0, 0);
@@ -141,6 +164,9 @@
         Game.input.keyboard.addCallbacks(this, null, null, keyPress);
 
         function spawnBoard() {
+
+            WORD = prepareWordArray(WORD);
+
             var kb = new virKeyBoard(Game);
             kb.init(keyPress);
             plates = Game.add.group();
@@ -158,7 +184,7 @@
                     var id = calcPLateId(i,j);
 
                     // создаем обводку по краям и заполняем пробелы белым
-                    if (j == 0 || j == (BOARD_ROWS - 1) || i == 0 || i == (BOARD_COLS - 1) || !WORD[id] || WORD[id] == '*') {
+                    if (j == 0 || j == (BOARD_ROWS - 1) || i == 0 || i == (BOARD_COLS - 1) || !WORD[id] || WORD[id] == '_') {
                         plate.inputEnabled = false;
                         plate.frame = 1;
                     } else {
@@ -177,28 +203,71 @@
             return posX + posY * BOARD_COLS;
         }
 
-        function keyPress(char) {
-            var hasLetter = false;
-            for(var p in WORD) {
-                // есть
-                if (WORD[p] == char) {
-                    hasLetter = true;
-                    var plate = plates.iterate('id', parseInt(p), Phaser.Group.RETURN_CHILD);
-                    var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: plate.width, align: "center"};
-                    var word = WORD[p];
-                    var tween = Game.add.tween(plate.scale).to( { x: 0, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
-                    tween.onComplete.add(function() {
-                        plate.frame = 1;
-                        var text = Game.add.text(-10,-20, word, style);
-                        plate.addChild(text);
-                        Game.add.tween(plate.scale).to( { x: 1, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
-                    }, this);
+        function prepareWordArray(_word) {
+            // надо подготовить поле, и все обновить
+            //BOARD_COLS - число колонок
+            // BOARD_ROWS - число строк
+            var resultArray = {}, resultLen = 0, startX = 1, startY = 1, tmpRow = 1;
+
+            for (var l in _word) {
+                // если не буква
+                if (_word[l] != '*') {
+                    resultArray[calcPLateId(startX, startY)] = _word[l];
+                    resultLen++;
+                    startX++;
+                } else {
+                    // проверим на необходимость переноса строки
+                    if (resultLen >= (BOARD_COLS - 2)) {
+                        BOARD_ROWS++;
+                        tmpRow++;
+                        startY = tmpRow;
+                        resultLen = 0;
+                        startX = 1;
+                    }
+
+                    resultArray[calcPLateId(startX, startY)] = _word[l];
+                    startX++;
+                    resultLen++;
                 }
             }
+            return resultArray;
+        }
 
-            if (!hasLetter) {
+        function keyPress(char) {
+            SRV_API.sendLetter(char,
+            function(data){
+                console.log(data);
+                var hasLetter = false;
+                if (data.r) {
+                    WORD = prepareWordArray(data.WordMask);
+                    for(var p in WORD) {
+                        // есть
+                        if (WORD[p] == char) {
+                            hasLetter = true;
+                            var plate = plates.iterate('id', parseInt(p), Phaser.Group.RETURN_CHILD);
+                            var style = { font: "32px Arial", fill: "#ff0044", wordWrap: true, wordWrapWidth: plate.width, align: "center"};
+                            var word = WORD[p];
+                            plate.frame = 1;
+                            var text = Game.add.text(-10,-20, word, style);
+                            plate.addChild(text);
+                            // твины не работают
+//                            var tween = Game.add.tween(plate.scale).to( { x: 0, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
+//                            tween.onComplete.add(function() {
+//
+//                                Game.add.tween(plate.scale).to( { x: 1, y: 1 }, 1000, Phaser.Easing.Linear.None, true);
+//                            }, this);
+                        }
+                    }
+                }
+
+                if (!hasLetter) {
+                    modals.showModal("wrongLatter");
+                }
+            },
+            function(data){
                 modals.showModal("wrongLatter");
-            }
+            });
+
         }
     };
 

@@ -4,8 +4,9 @@ wordApi = function(game) {
     var _this = this,
         CLIENT_KEY = '8K2rxSUn7xtU21j2pnxp',
         sid = '',
-        viewer_id = '12',
-        viewer_platform = 0;
+        viewer_id = '123',
+        viewer_platform = 0,
+        main_url = 'http://words.lalakla.ru/test/';
 
 
     return {
@@ -17,8 +18,9 @@ wordApi = function(game) {
             params.viewer_id = viewer_id;
             params.viewer_platform = viewer_platform;
             params.name = 'sderxc';
+            params.sex = 1;
             function ksort(w) {
-                var sArr = [], tArr = [], n = 0;
+                var sArr = {}, tArr = [], n = 0;
 
                 for (i in w){
                     tArr[n++] = i;
@@ -30,8 +32,6 @@ wordApi = function(game) {
                 }
                 return sArr;
             }
-            //console.log(ksort(params));
-            //return self.prepareSig(params);
             return self.prepareSig(ksort(params));
         },
         prepareSig: function(params) {
@@ -51,13 +51,27 @@ wordApi = function(game) {
                 sid = answer.__sid;
             }
         },
+        startGame: function(successCb, errorCb) {
+            var self = this;
+            self.send({
+                url: main_url + 'game/start/', data: {}
+            }, successCb, errorCb);
+        },
+        sendLetter: function(letter, successCb, errorCb) {
+            var self = this;
+            self.send({
+                url: main_url + 'game/try_sym/', data: {sym: letter}
+            }, successCb, errorCb);
+        },
         send: function(params, successCb, errorCb) {
             var self = this;
             params.data = self.prepareData(params.data);
             console.log(params.data);
             $.post(params.url, params.data, function(data){
                 if (data.data) {
-                    successCb(data.data);
+                    var apiResult = JSON.parse(data.data);
+                    console.log('init1', apiResult);
+                    successCb(apiResult);
                     self.updateSid(data);
                 } else {
                     errorCb(data);
