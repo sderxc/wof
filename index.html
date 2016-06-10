@@ -11,6 +11,13 @@
     <script src='src/app/api.js'></script>
 </head>
 <body>
+<style>
+    #phaser-example {
+        margin: 0 auto;
+        width: 730px;
+        height: 600px;
+    }
+</style>
 <div id="phaser-example">
 
 </div>
@@ -20,14 +27,14 @@
     var SRV_API = new wordApi({}),
         USER_CONFIG = {},
         GAME_CONFIG = {},
-        SCENE = '',
-        WINDOW_WIDTH = window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
-        WINDOW_HEIGHT = window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
+        SCENE = 'phaser-example',
+        WINDOW_WIDTH = 730,//window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
+        WINDOW_HEIGHT = 600, //window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight,
         LOADING_TEXT = 'Запускаем...',
-        PLATE_WIDTH = 60,
-        PLATE_HEIGHT = 60,
-        BOARD_COLS = 24,
-        BOARD_ROWS = 4;
+        PLATE_WIDTH = 40,
+        PLATE_HEIGHT = 38,
+        BOARD_COLS = 16,
+        BOARD_ROWS = 3;
 
     var Background, //Игровой фон
         TitleText, LoadingText, HintText,
@@ -51,6 +58,7 @@
     // загрузка
     var BootGameState = new Phaser.State();
     BootGameState.create = function() {
+        Game.add.image(0,0, 'background'); // ВЫВОД БЭКА
         LoadingText = Game.add.text(Game.world.width / 2, Game.world.height / 2, LOADING_TEXT, {
             font: '32px "Press Start 2P"',
             fill: '#FFFFFF',
@@ -59,12 +67,14 @@
             align: 'center'
         });
         LoadingText.anchor.setTo(0.5, 0.5);
+
         Game.state.start('Preloader', false, false);
     };
 
     // прелоадер
     var PreloaderGameState = new Phaser.State();
     PreloaderGameState.preload = function() {
+
         SRV_API.send({url: 'http://words.lalakla.ru/test/main/init', data: {}},
             function(data){
                 USER_CONFIG = data.User;
@@ -73,8 +83,10 @@
             function(data){ console.log('ERRR',data)}
         );
 
-        Game.load.spritesheet("PLATES", "assets/sprite_1.jpg", PLATE_WIDTH, PLATE_HEIGHT);
-        Game.load.spritesheet("BTN", "assets/gui/test_btn.png", 605, 236);
+
+        Game.load.spritesheet("PLATES", "assets/img/words_plate.png", PLATE_WIDTH, PLATE_HEIGHT);
+        Game.load.spritesheet("BTN_PASS", "assets/gui/btn_pass.png", 175, 50);
+        Game.load.image("WORD_BG", "assets/img/word_bg.png", 510, 132);
 
         // модальные окна
         modals = new gameModal(Game);
@@ -146,10 +158,9 @@
 
         }
 
-        MenuStartBtn = Game.add.button(Game.world.width / 2, Game.world.height / 3, 'BTN', click, this, 0, 0, 0);
-        MenuStartBtn.scale.setTo(0.3, 0.3);
-        var style = { font: "68px Arial", fill: "#fff", wordWrap: true, wordWrapWidth: MenuStartBtn.width, align: "center"};
-        var text = Game.add.text(-30,-20, 'Начать', style);
+        MenuStartBtn = Game.add.button(Game.world.width / 2, Game.world.height / 3, 'BTN_PASS', click, this, 2, 0, 1);
+        var style = { font: "19px Arial", fill: "#fff", wordWrap: true, wordWrapWidth: MenuStartBtn.width, align: "center"};
+        var text = Game.add.text(-30,-10, 'Начать', style);
         MenuStartBtn.addChild(text);
         MenuStartBtn.anchor.setTo(0.5, 0.5);
 
@@ -164,6 +175,7 @@
         Game.input.keyboard.addCallbacks(this, null, null, keyPress);
 
         function spawnBoard() {
+            Game.add.image(128, 145, 'WORD_BG');
 
             WORD = prepareWordArray(WORD);
 
@@ -175,8 +187,8 @@
             {
                 for (var j = 0; j < BOARD_ROWS; j++)
                 {
-                    var posX = (i * (PLATE_WIDTH + 3)) + (Game.world.centerX - (PLATE_WIDTH * (BOARD_COLS/2))); // выровняем по центру экрана =)
-                    var posY = (j * (PLATE_HEIGHT + 3)) + Game.world.height / 10;
+                    var posX = (i * (PLATE_WIDTH - 10)) + 158; // отспуп с права
+                    var posY = (j * (PLATE_HEIGHT)) + 170; //отступ сверху
                     var plate = plates.create(posX, posY, "PLATES");
                     plate.anchor.setTo(0.5, 0.5);
                     plate.name = 'plate' + i.toString() + 'x' + j.toString();
@@ -275,15 +287,23 @@
         Game.debug.text(Game.time.fps || '--', 2, 14, "#00ff00");
     };
 
-    var Game = new Phaser.Game(WINDOW_WIDTH, WINDOW_HEIGHT, Phaser.CANVAS, SCENE);
-    //Добавляем все игровые State в объект Game
-    Game.state.add('Boot', BootGameState, false);
-    Game.state.add('Preloader', PreloaderGameState, false);
-    Game.state.add('MainMenu', MainMenuState, false);
-    Game.state.add('Game', GameState, false);
+    var Game = new Phaser.Game(WINDOW_WIDTH, WINDOW_HEIGHT, Phaser.CANVAS, SCENE,{ preload: preload, create: create });
+     function preload (){
+         Game.load.image('background', 'assets/img/main_bg.jpg', 730, 600);
+     };
+    function create(){
+
+        Game.state.add('Boot', BootGameState, false);
+        Game.state.add('Preloader', PreloaderGameState, false);
+        Game.state.add('MainMenu', MainMenuState, false);
+        Game.state.add('Game', GameState, false);
 //    Game.state.add('GameOver', GameOverState, false);
-    //Главным шагом является старт загрузки Boot State'а
-    Game.state.start('Boot');
+        //Главным шагом является старт загрузки Boot State'а
+        Game.state.start('Boot');
+
+    };
+    //Добавляем все игровые State в объект Game
+
 
 </script>
 </html>

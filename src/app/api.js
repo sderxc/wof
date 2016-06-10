@@ -4,7 +4,7 @@ wordApi = function(game) {
     var _this = this,
         CLIENT_KEY = '8K2rxSUn7xtU21j2pnxp',
         sid = '',
-        viewer_id = '123',
+        viewer_id = '321',
         viewer_platform = 0,
         main_url = 'http://words.lalakla.ru/test/';
 
